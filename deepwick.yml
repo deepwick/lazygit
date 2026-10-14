@@ -1,0 +1,32 @@
+# Deepwick for lazygit. Merge into your config.yml, or list this file in
+# LG_CONFIG_FILE alongside your own config.
+gui:
+  theme:
+    activeBorderColor:
+      - "#569CD6"
+      - bold
+    inactiveBorderColor:
+      - "#1B2140"
+    searchingActiveBorderColor:
+      - "#D7BA7D"
+      - bold
+    optionsTextColor:
+      - "#569CD6"
+    selectedLineBgColor:
+      - "#264F78"
+    inactiveViewSelectedLineBgColor:
+      - "#1B2140"
+    cherryPickedCommitFgColor:
+      - "#04041a"
+    cherryPickedCommitBgColor:
+      - "#4EC9B0"
+    markedBaseCommitFgColor:
+      - "#04041a"
+    markedBaseCommitBgColor:
+      - "#DCDCAA"
+    unstagedChangesColor:
+      - "#F44747"
+    defaultFgColor:
+      - "#D4D4D4"
+  authorColors:
+    "*": "#9CDCFE"
