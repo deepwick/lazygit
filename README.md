@@ -17,8 +17,13 @@ settings you already have.
 Or keep it separate and load both files:
 
 ```sh
+mkdir -p "$(lazygit --print-config-dir)"
+touch "$(lazygit --print-config-dir)/config.yml"
 export LG_CONFIG_FILE="$(lazygit --print-config-dir)/config.yml,/path/to/deepwick.yml"
 ```
+
+lazygit refuses to start if any file in `LG_CONFIG_FILE` is missing, hence
+the `touch`.
 
 ## Notes
 

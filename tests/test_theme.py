@@ -78,3 +78,23 @@ def test_lazygit_renders_active_border_blue(tmp_path):
 
 def test_port_conventions():
     assert check_port(REPO, PALETTE.allowed_hex()) == []
+
+
+@pytest.mark.skipif(not (tmux_available() and shutil.which("lazygit")), reason="requires tmux and lazygit")
+def test_readme_install_block_works_on_clean_config(tmp_path):
+    import re
+
+    readme = (REPO / "README.md").read_text()
+    block = re.search(r"Or keep it separate.*?```sh\n(.*?)```", readme, re.S).group(1)
+    block = block.replace("/path/to/deepwick.yml", str(REPO / "deepwick.yml"))
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
+    git = ["git", "-C", str(repo), "-c", "user.name=Deepwick", "-c", "user.email=deepwick@example.invalid"]
+    (repo / "a.txt").write_text("a\n")
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run([*git, "commit", "-qm", "Initial commit"], check=True)
+    script = tmp_path / "install.sh"
+    script.write_text(block + f"\nexec lazygit -p {repo}\n")
+    env = {"XDG_CONFIG_HOME": str(tmp_path / "config"), "XDG_STATE_HOME": str(tmp_path / "state"), "GIT_CONFIG_GLOBAL": "/dev/null"}
+    text = capture(f"bash {script}", env, size=(120, 35), wait_for="Status")  # first-run popup may cover panels
+    assert "Status" in text
