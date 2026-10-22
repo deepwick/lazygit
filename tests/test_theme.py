@@ -29,6 +29,7 @@ EXPECTED = {
     "markedBaseCommitBgColor": [C["yellow"]],
     "unstagedChangesColor": [C["red"]],
     "defaultFgColor": [C["foreground"]],
+    "authorColors": {"*": C["lightBlue"]},
 }
 
 
@@ -48,8 +49,40 @@ def test_keys_exist_in_lazygits_default_config():
 
 
 def test_author_color():
-    gui = yaml.safe_load((REPO / "deepwick.yml").read_text())["gui"]
-    assert normalize_hex(gui["authorColors"]["*"]) == normalize_hex(C["lightBlue"])
+    assert normalize_hex(theme()["authorColors"]["*"]) == normalize_hex(C["lightBlue"])
+
+
+def theme_copy(tmp_path):
+    # lazygit rewrites outdated config files in place; never hand it the repo's copy.
+    copy = tmp_path / "deepwick.yml"
+    shutil.copy(REPO / "deepwick.yml", copy)
+    return copy
+
+
+def lazygit_repo(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git = ["git", "-C", str(repo), "-c", "user.name=Deepwick", "-c", "user.email=deepwick@example.invalid"]
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
+    (repo / "a.txt").write_text("a\n")
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run([*git, "commit", "-qm", "Initial commit"], check=True)
+    return repo
+
+
+@pytest.mark.skipif(not (tmux_available() and shutil.which("lazygit")), reason="requires tmux and lazygit")
+def test_lazygit_needs_no_config_migration(tmp_path):
+    copy = theme_copy(tmp_path)
+    extra = tmp_path / "test.yml"
+    extra.write_text("disableStartupPopups: true\n")
+    capture(
+        f"lazygit -p {lazygit_repo(tmp_path)}",
+        {"LG_CONFIG_FILE": f"{copy},{extra}", "XDG_CONFIG_HOME": str(tmp_path / "config"),
+         "XDG_STATE_HOME": str(tmp_path / "state"), "GIT_CONFIG_GLOBAL": "/dev/null"},
+        size=(120, 35),
+        wait_for="Initial commit",
+    )
+    assert copy.read_text() == (REPO / "deepwick.yml").read_text()
 
 
 @pytest.mark.skipif(not (tmux_available() and shutil.which("lazygit")), reason="requires tmux and lazygit")
@@ -66,7 +99,7 @@ def test_lazygit_renders_active_border_blue(tmp_path):
     extra.write_text("disableStartupPopups: true\n")
     text = capture(
         f"lazygit -p {repo}",
-        {"LG_CONFIG_FILE": f"{REPO / 'deepwick.yml'},{extra}", "XDG_CONFIG_HOME": str(tmp_path / "config"),
+        {"LG_CONFIG_FILE": f"{theme_copy(tmp_path)},{extra}", "XDG_CONFIG_HOME": str(tmp_path / "config"),
          "XDG_STATE_HOME": str(tmp_path / "state"), "GIT_CONFIG_GLOBAL": "/dev/null"},
         size=(120, 35),
         wait_for="Initial commit",
@@ -86,7 +119,7 @@ def test_readme_install_block_works_on_clean_config(tmp_path):
 
     readme = (REPO / "README.md").read_text()
     block = re.search(r"Or keep it separate.*?```sh\n(.*?)```", readme, re.S).group(1)
-    block = block.replace("/path/to/deepwick.yml", str(REPO / "deepwick.yml"))
+    block = block.replace("/path/to/deepwick.yml", str(theme_copy(tmp_path)))
     repo = tmp_path / "repo"
     subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
     git = ["git", "-C", str(repo), "-c", "user.name=Deepwick", "-c", "user.email=deepwick@example.invalid"]

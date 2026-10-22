@@ -30,8 +30,10 @@ the `touch`.
 - Inactive panel borders use Overlay, so they recede; the focused panel is
   Blue and bold.
 - All commit authors are Light Blue.
+- lazygit 0.66 moved `authorColors` under `gui.theme`. On older versions, move
+  it back up to `gui:`.
 
-Tested with lazygit 0.62.2.
+Tested with lazygit 0.66.2.
 
 ## License
 
